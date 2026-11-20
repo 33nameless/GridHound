@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+<PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>disable</Nullable></PropertyGroup>
+<ItemGroup><PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2"/>
+<Compile Include="../../Models/Detection.cs" Link="Detection.cs"/>
+<Compile Include="../../Services/SelectionExportTimeline.cs" Link="SelectionExportTimeline.cs"/>
+<Compile Include="../../Services/ExportSerialization.cs" Link="ExportSerialization.cs"/>
+<Compile Include="../../Services/AutoCorrectionRequests.cs" Link="AutoCorrectionRequests.cs"/>
+<Compile Include="../../Services/SourceTiming.cs" Link="SourceTiming.cs"/>
+<Compile Include="../../Services/PreviewCoordinates.cs" Link="PreviewCoordinates.cs"/>
+<Compile Include="../../Services/RoiPolicy.cs" Link="RoiPolicy.cs"/>
+<Compile Include="../../Services/EdgeGeometry.cs" Link="EdgeGeometry.cs"/>
+<Compile Include="../../Services/SelectionLogic.cs" Link="SelectionLogic.cs"/>
+<Compile Include="../../Services/HungarianAlgorithm.cs" Link="HungarianAlgorithm.cs"/>
+<Compile Include="../../Services/TrackerService.cs" Link="TrackerService.cs"/>
+<Compile Include="../../Services/KalmanFilter.cs" Link="KalmanFilter.cs"/>
+</ItemGroup><ItemGroup><None Include="Fixtures/ski-baseline-detections.json" CopyToOutputDirectory="PreserveNewest"/><None Include="Fixtures/road-roi-crop-detections.json" CopyToOutputDirectory="PreserveNewest"/><None Include="Fixtures/road-baseline-detections.json" CopyToOutputDirectory="PreserveNewest"/></ItemGroup></Project>

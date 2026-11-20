@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>GridHound</AssemblyName>
+    <AssemblyTitle>GridHound — Object Detect/Track Utility</AssemblyTitle>
+    <AssemblyProduct>GridHound</AssemblyProduct>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\app.ico" />
+    <Resource Include="Resources\EasterEgg.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.0" />
+    <PackageReference Include="OpenCvSharp4" Version="4.8.1" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.8.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Assets\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Assets\**\*.onnx" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- тестовый проект лежит в подпапке: не даём основному csproj подхватить его *.cs и obj -->
+    <Compile Remove="tests\**\*.cs" />
+    <None Remove="tests\**" />
+    <Page Remove="tests\**" />
+  </ItemGroup>
+
+</Project>

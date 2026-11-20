@@ -1,0 +1,461 @@
+﻿<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:ObjectDetectTrackApp" xmlns:controls="clr-namespace:ObjectDetectTrackApp.Controls" xmlns:conv="clr-namespace:ObjectDetectTrackApp.Converters" xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework" x:Class="ObjectDetectTrackApp.MainWindow" Title="GridHound" WindowStyle="None" ResizeMode="CanResize" Icon="pack://application:,,,/Resources/app.ico" Width="1400" Height="900" WindowState="Maximized" Background="{DynamicResource TerminalBgBrush}" Foreground="{DynamicResource TerminalFgBrush}" UseLayoutRounding="True" SnapsToDevicePixels="True">
+
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="39" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" NonClientFrameEdges="None" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Window.InputBindings>
+        <KeyBinding Key="Escape" Command="{Binding ClearSelectionCommand}"/>
+    </Window.InputBindings>
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/Resources/TerminalTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <!-- No transparency or custom DragMove: WindowChrome retains native caption behaviour. -->
+            <Style x:Key="CaptionButtonStyle" TargetType="Button">
+                <Setter Property="Width" Value="100"/>
+                <Setter Property="Height" Value="38"/>
+                <Setter Property="Padding" Value="12,0"/>
+                <Setter Property="FontFamily" Value="Consolas"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Background" Value="#000000"/>
+                <Setter Property="Foreground" Value="#FFFFFF"/>
+                <Setter Property="BorderBrush" Value="#444444"/>
+                <Setter Property="BorderThickness" Value="1,0,0,0"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" SnapsToDevicePixels="True">
+                                <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}" RecognizesAccessKey="True"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsKeyboardFocused" Value="True">
+                        <Setter Property="BorderBrush" Value="White"/>
+                    </Trigger>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#00FF00"/>
+                        <Setter Property="Foreground" Value="#000000"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#00BB00"/>
+                        <Setter Property="Foreground" Value="#000000"/>
+                    </Trigger>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Opacity" Value="0.45"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style x:Key="CloseCaptionButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#DC143C"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="#A80F2E"/>
+                        <Setter Property="Foreground" Value="White"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <conv:NullToVisibilityConverter x:Key="NullToVis"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Border BorderBrush="#FFFFFF" BorderThickness="1" Background="#000000">
+    <DockPanel LastChildFill="True">
+        <Border DockPanel.Dock="Top" Height="38" Background="#000000" BorderBrush="#FFFFFF" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+                    <Image Source="{Binding Icon, RelativeSource={RelativeSource AncestorType=Window}}" Width="18" Height="18" Margin="0,0,10,0"/>
+                    <TextBlock Text="GRIDHOUND" FontFamily="Consolas" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Content="MIN" Style="{StaticResource CaptionButtonStyle}" Click="WindowMinimize_Click" ToolTip="Свернуть" AutomationProperties.Name="Свернуть окно"/>
+                    <Button Click="WindowMaximizeRestore_Click" AutomationProperties.Name="Развернуть или восстановить окно">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+                                <Setter Property="Content" Value="MAX"/>
+                                <Setter Property="ToolTip" Value="Развернуть"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding WindowState, RelativeSource={RelativeSource AncestorType=Window}}" Value="Maximized">
+                                        <Setter Property="Content" Value="RESTORE"/>
+                                        <Setter Property="ToolTip" Value="Восстановить размер"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="KILL" Style="{StaticResource CloseCaptionButtonStyle}" Click="WindowClose_Click" ToolTip="Закрыть GridHound" AutomationProperties.Name="Закрыть приложение"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- STATUS BAR -->
+        <Border Grid.Row="0" Background="#333333" Padding="8,4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0" Text="{Binding StatusText}" Foreground="White" FontFamily="Consolas" FontSize="11"/>
+                <TextBlock Grid.Column="1" Text="{Binding Resolution}" Foreground="White" FontFamily="Consolas" FontSize="11" Margin="20,0,0,0"/>
+                <TextBlock Grid.Column="2" Text="{Binding ActiveTracksCount, StringFormat='Active Tracks: {0}'}" Foreground="#00FF00" FontFamily="Consolas" FontSize="11" Margin="20,0,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- MAIN CONTENT -->
+        <Grid Grid.Row="1" Margin="4" Grid.RowSpan="2">
+            <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="190"/><RowDefinition Height="150"/></Grid.RowDefinitions><Grid.ColumnDefinitions>
+                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- LEFT: Sources/Queue -->
+            <Border Grid.Column="0" Background="#000000" BorderBrush="#FFFFFF" BorderThickness="1" Padding="8" Margin="4" Grid.Row="0" IsEnabled="{Binding ExportInputsEnabled}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- SOURCES header -->
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="SOURCES" Foreground="White" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+
+                    <TextBlock Grid.Row="1" Text="IMAGES" Foreground="White" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                    <ListBox Grid.Row="2" ItemsSource="{Binding SourcesViewModel.Images}" SelectedItem="{Binding SourcesViewModel.ImageSelected}" Background="#000000" Foreground="White" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FileName}" Foreground="White" FontFamily="Consolas" FontSize="10"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <TextBlock Grid.Row="3" Text="VIDEOS" Foreground="White" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,8,0,6"/>
+                    <ListBox Grid.Row="4" ItemsSource="{Binding SourcesViewModel.Videos}" SelectedItem="{Binding SourcesViewModel.VideoSelected}" Background="#000000" Foreground="White" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding FileName}" Foreground="#B0BEC5" FontFamily="Consolas" FontSize="10"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <StackPanel Grid.Row="5" Margin="0,8,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource TerminalButtonStyle}" Content="+ Image" Command="{Binding SourcesViewModel.AddImageCommand}" Margin="0,0,4,0"/>
+                            <Button Style="{StaticResource TerminalButtonStyle}" Content="+ Video" Command="{Binding SourcesViewModel.AddVideoCommand}"/>
+                        </StackPanel>
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="Remove" Command="{Binding SourcesViewModel.RemoveSelectedCommand}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- CENTER: Preview -->
+            <Border Grid.Column="1" Background="#000000" BorderBrush="#FFFFFF" BorderThickness="1" Padding="8" Margin="4" Grid.Row="0" Grid.RowSpan="2">
+                <Grid Background="Black" ClipToBounds="True">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <RowDefinition Height="Auto"/><!-- PREVIEW header -->
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="PREVIEW" Foreground="White" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,4,6" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                    <ScrollViewer Grid.Row="2" x:Name="PreviewScroll" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled" CanContentScroll="False" BorderThickness="0" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Background="Transparent" PreviewMouseWheel="Preview_MouseWheel" MouseDoubleClick="Preview_DoubleClick">
+                        <!-- The outer size is independent of scrollbar visibility.
+                             Never bind this image to ViewportWidth/Height: that creates a layout feedback loop.
+                             Scrollbars are explicitly enabled only when zoom exceeds 100%. -->
+                        <Image x:Name="PreviewImage" Source="{Binding PreviewImage}" Width="{Binding ActualWidth, ElementName=PreviewScroll}" Height="{Binding ActualHeight, ElementName=PreviewScroll}" Stretch="Uniform" PreviewMouseLeftButtonDown="Preview_MouseLeftButtonDown" PreviewMouseMove="Preview_MouseMove" PreviewMouseLeftButtonUp="Preview_MouseLeftButtonUp" LostMouseCapture="Preview_LostMouseCapture" RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.LayoutTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Image.LayoutTransform>
+                        </Image>
+                    </ScrollViewer>
+
+                    <TextBlock Grid.Row="2" Text="[No source] · колесо мыши — зум, двойной клик — вписать" Foreground="White" Opacity="0.5" FontFamily="Consolas" FontSize="11" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="{Binding PreviewImage, Converter={StaticResource NullToVis}}"/>
+
+                    <Border Grid.Row="2" Background="#80000000" CornerRadius="4" Padding="6,2" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,8,0">
+                        <TextBlock x:Name="ZoomLabel" Text="100%" Foreground="#00FF00" FontFamily="Consolas" FontSize="10" Visibility="Collapsed"/>
+                    </Border>
+                    <Grid Grid.Row="3" x:Name="TimelineBox" Height="40" Margin="0,6,0,0" Background="#050505" MouseLeftButtonUp="Timeline_MouseUp" Cursor="Hand" ToolTip="Клик — перейти к кадру" Visibility="{Binding HasTimeline, Converter={StaticResource BoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="TIMELINE" Foreground="#666666" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="6,0"/>
+                        <controls:MiniTimeline Grid.Column="1" x:Name="Tl" Margin="0,5" FrameCount="{Binding TimelineFrameCount}" Playhead="{Binding CurrentFrameIndex}"/>
+                        <TextBlock Grid.Column="2" Foreground="#FFC107" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="6,0"><Run Text="f"/><Run Text="{Binding CurrentFrameIndex, Mode=OneWay}"/><Run Text="/"/><Run Text="{Binding TimelineFrameCount, Mode=OneWay}"/></TextBlock>
+                    </Grid>
+                                    <Border Grid.Row="1" Visibility="{Binding CorrectionNoticeVisible, Converter={StaticResource BoolToVis}}" Background="#172314" BorderBrush="#B4D35A" BorderThickness="1" Padding="8" Margin="0,4,0,6"><StackPanel><TextBlock Text="{Binding CorrectionNoticeTitle}" Foreground="#D9F58B" FontWeight="Bold" FontSize="12" TextWrapping="Wrap"/><TextBlock Text="{Binding CorrectionNoticeText}" Foreground="White" FontSize="11" TextWrapping="Wrap" Margin="0,3,0,0"/><TextBlock Text="Подробности и настройки — слева снизу, в блоке «ВЫБОР S · УТОЧНЕНИЕ»." Foreground="#C3C3C3" FontSize="10" TextWrapping="Wrap" Margin="0,3,0,0"/><TextBlock Text="{Binding CorrectionHint}" Foreground="#D9F58B" FontSize="10" TextWrapping="Wrap" Margin="0,3,0,0"/><WrapPanel Margin="0,5,0,0"><Button Content="Продолжить без уточнения" Command="{Binding ContinueWithoutCorrectionCommand}" Style="{StaticResource TerminalButtonStyle}" FontSize="10" Padding="6,3" Margin="0,0,6,0" MinHeight="0" MinWidth="0"/><Button Content="Отмена" Command="{Binding CancelSelectionCorrectionCommand}" Style="{StaticResource TerminalButtonStyle}" FontSize="10" Padding="6,3" Margin="0,0,6,0" MinHeight="0" MinWidth="0"/></WrapPanel></StackPanel></Border></Grid>
+            </Border>
+
+            <!-- RIGHT: Detections (current) + Results (all frames) -->
+            <Grid Grid.Column="2" Grid.Row="0" Grid.RowSpan="3">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/></Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Background="#000000" BorderBrush="#FFFFFF" BorderThickness="1" Padding="8" Margin="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="DETECTIONS · CURRENT FRAME" Foreground="White" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock Grid.Column="1" Text="{Binding TrackingInfo}" Foreground="#00FF00" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="8,0,6,0" TextTrimming="CharacterEllipsis" ToolTip="Кто подсвечивается/трекается сейчас"/>
+                            <ToggleButton Grid.Column="2" Padding="6,1" FontSize="11" Cursor="Hand" Content="Выбор" Foreground="#FFFFFF" IsChecked="{Binding SelectMode}" ToolTip="Режим выбора кликом по превью: клик — выбрать, Ctrl+клик — добавить/убрать, Esc — сброс. Чекбокс в списке — следим за объектом"/>
+                            <Button Grid.Column="3" Content="✖" Command="{Binding ClearSelectionCommand}" Style="{StaticResource TerminalButtonStyle}" Padding="6,1" FontSize="9" MinWidth="0" MinHeight="0" Margin="4,0,0,0" ToolTip="Снять выбор — подсветка всех объектов"/>
+                        </Grid>
+
+                        <ListBox Grid.Row="1" ItemsSource="{Binding Detections}" Background="#000000" Foreground="#00FF00" BorderThickness="0" FontFamily="Consolas" FontSize="10" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" VerticalAlignment="Center" Margin="0,0,6,0" Cursor="Hand" ToolTip="Следить только за этим объектом" IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Click="Det_Track_Toggled"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding DisplayLine}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="2,3"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                            <Setter Property="Background" Value="#1B5E20"/>
+                                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Row="1" Background="#000000" BorderBrush="#FFFFFF" BorderThickness="1" Padding="8" Margin="4">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="RESULTS · CLICK = FRAME" Foreground="White" FontFamily="Consolas" FontSize="11" FontWeight="Bold"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SessionDetections.Count, StringFormat=[{0}]}" Foreground="#00FF00" FontFamily="Consolas" FontSize="10" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <Button Grid.Column="2" Content="clear" Command="{Binding ClearSessionCommand}" Style="{StaticResource TerminalButtonStyle}" Padding="8,2" FontSize="9" MinWidth="0" MinHeight="0"/>
+                        </Grid>
+
+                        <ListBox Grid.Row="1" x:Name="SessionListBox" ItemsSource="{Binding SessionDetections}" SelectedItem="{Binding SelectedSessionDetection}" Background="#000000" Foreground="#B0BEC5" BorderThickness="0" FontFamily="Consolas" FontSize="10" HorizontalContentAlignment="Stretch" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ToolTip="Клик по строке — показать этот кадр с боксами">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding SessionLine}" TextWrapping="Wrap"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="2,3"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="#1B5E20"/>
+                                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                        </ListBox>
+                    </Grid>
+                </Border>
+            <ScrollViewer Grid.Row="2" MaxHeight="450" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><Border Grid.Column="0" Background="#000000" BorderBrush="#FFFFFF" BorderThickness="1" Padding="8" Margin="4" IsEnabled="{Binding ExportInputsEnabled}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="CONTROLS" Foreground="White" FontFamily="Consolas" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="▶ Play" Command="{Binding PlayCommand}" Margin="0,0,4,0"/>
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="⏸ Pause" Command="{Binding PauseCommand}" Margin="0,0,4,0"/>
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="⏹ Stop" Command="{Binding StopCommand}"/>
+                    </StackPanel>
+
+                    <Grid Grid.Row="2" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="50"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="30"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Conf:" Foreground="White" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding ConfidenceThreshold}" ToolTip="Порог новых объектов. В видео существующий трек может продолжаться по более слабому обнаружению (от 0,10)." Background="#333333" Foreground="#00FF00"/>
+                        <TextBlock Grid.Column="2" Text="{Binding ConfidenceThreshold, StringFormat=' {0:F2}'}" Foreground="#00FF00" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <StackPanel Grid.Row="3" Margin="0,0,0,8">
+                      <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding FilterPersonOnly}" Foreground="White" FontFamily="Consolas" FontSize="9" Content="Only Person"/>
+                        <CheckBox IsChecked="{Binding EnableTracking}" Foreground="White" FontFamily="Consolas" FontSize="9" Margin="14,0,0,0" Content="Tracking (SORT)"/>
+                      </StackPanel>
+                      <StackPanel IsEnabled="{Binding ExportInputsEnabled}">
+                      <CheckBox IsChecked="{Binding EnableRoi}" Foreground="White" FontFamily="Consolas" FontSize="9" Margin="0,6,0,0"
+                                Content="ROI · мелкие объекты (доп. нагрузка)"
+                                ToolTip="Фиксированный центральный верхний участок 36%×44%, не вся сцена. Дополнительный проход той же модели не чаще раза в 0,2 с исходника; на фото/паузе — при анализе. Может замедлять видео и экспорт. Рамки и маски объединяются с полным кадром. ROI не гарантирует правильный S."/>
+                      <CheckBox IsChecked="{Binding RoiEveryFrame}" IsEnabled="{Binding EnableRoi}" Foreground="#BBBBBB" FontFamily="Consolas" FontSize="9" Margin="12,4,0,0"
+                                Content="ROI каждый кадр · медленнее"
+                                ToolTip="Выключено: экономный проход раз в 0,2 с исходника. Включено: один дополнительный проход на каждом обработанном кадре, лучше последовательность наблюдений, до двух запусков модели на кадр. FPS может заметно упасть. В Плавности пропущенные кадры не восстанавливаются."/>
+                      </StackPanel>
+                    </StackPanel>
+
+                    <Grid Grid.Row="4" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="NMS:" Foreground="White" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <Slider Grid.Column="1" Minimum="0" Maximum="1" Value="{Binding NmsThreshold}" Background="#333333" Foreground="#00FF00"/>
+                    </Grid>
+
+                    <StackPanel Grid.Row="5" Margin="0,0,0,4">
+                        <ComboBox Style="{StaticResource TerminalComboStyle}" Margin="0,0,0,4" SelectedIndex="{Binding PlaybackModeIndex}" ToolTip="Плавность: последний результат сети; Точность: детекция каждого показанного кадра">
+                            <ComboBoxItem Content="Воспроизведение: Плавность"/>
+                            <ComboBoxItem Content="Воспроизведение: Точность"/>
+                        </ComboBox>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Highlight:" Foreground="White" FontFamily="Consolas" FontSize="9" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                        <ComboBox Grid.Column="1" Style="{StaticResource TerminalComboStyle}" SelectedIndex="{Binding HighlightModeIndex}">
+                            <ComboBoxItem Content="Боксы"/>
+                            <ComboBoxItem Content="Контур"/>
+                            <ComboBoxItem Content="Боксы + контур"/>
+                            <ComboBoxItem Content="Маска + контур"/>
+                        </ComboBox>
+                    </Grid>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="6" Orientation="Vertical" Margin="0,8,0,0">
+                        <TextBlock Text="EXPORT" Foreground="White" FontFamily="Consolas" FontSize="9" FontWeight="Bold" Margin="0,0,0,4"/>
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="📄 JSON" ToolTip="Наблюдения просмотра, не полный повторный анализ. Время — от начала исходника; рядом сохраняется metadata.json." Command="{Binding ExportJsonCommand}" Margin="0,0,0,4"/>
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="📊 CSV" ToolTip="Наблюдения просмотра, не полный повторный анализ. Время — от начала исходника; рядом сохраняется metadata.json." Command="{Binding ExportCsvCommand}" Margin="0,0,0,4"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Style="{StaticResource TerminalButtonStyle}" Content="✚ Mark frame" ToolTip="Отметить/снять текущий кадр для выборочного экспорта (повторное нажатие снимает отметку, дубли исключены)" Command="{Binding MarkCurrentFrameCommand}" Margin="0,0,4,0"/>
+                            <Button Grid.Column="1" Style="{StaticResource TerminalButtonStyle}" Content="⌫" MinWidth="36" ToolTip="Снять все отметки кадров" Command="{Binding ClearExportMarksCommand}"/>
+                        </Grid>
+                        <TextBlock Text="{Binding ExportMarksText}" Foreground="#FFAA00" FontFamily="Consolas" FontSize="9" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="🖼 Frames" ToolTip="Повторный анализ с историей выбора: отмеченные кадры — иначе кадры с принятыми обнаружениями. Не копия наблюдений просмотра." Command="{Binding ExportFramesCommand}" Margin="0,0,0,4"/>
+                        <Button Style="{StaticResource TerminalButtonStyle}" Content="🎬 Video" ToolTip="Весь исходник с начала, повторный анализ с историей выбора. Без звука. Рядом сохраняется metadata.json." Command="{Binding ExportVideoCommand}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </ScrollViewer></Grid>
+
+        <Border Grid.Column="0" Grid.Row="1" Background="#000000" BorderBrush="White" BorderThickness="1" Padding="8" Margin="4" IsEnabled="{Binding ExportInputsEnabled}"><ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="0,4,0,5">
+                            <TextBlock Text="ВЫБОР S · УТОЧНЕНИЕ" Foreground="White" FontSize="10" FontWeight="Bold" Margin="0,0,0,5"/><CheckBox IsChecked="{Binding AutoRequestCorrection}" Foreground="White" FontSize="9" Margin="0,0,0,4" Content="Запрашивать уточнение при потере" ToolTip="После 1 секунды исходного видео без уверенного сопровождения. Пауза зависит от галочки ниже."/><CheckBox IsChecked="{Binding PauseOnCorrection}" Foreground="White" FontSize="9" Margin="0,0,0,4" ToolTip="Пауза при нажатии «Уточнить». После выбора или отмены продолжится только видео, которое эта операция сама остановила. Изменение галочки действует со следующего уточнения.">
+                                <TextBlock Text="Пауза при уточнении" TextWrapping="Wrap"/>
+                            </CheckBox>
+                            <CheckBox IsChecked="{Binding ActiveReacquisition}" Foreground="White" FontSize="9" ToolTip="Оба режима ищут только рядом. Активный: 3 подтверждения; строгий: 4.">
+                                <TextBlock Text="Активное восстановление (по умолчанию: строго)" TextWrapping="Wrap"/>
+                            </CheckBox>
+                            <ScrollViewer MaxHeight="60" VerticalScrollBarVisibility="Auto" Margin="0,3">
+                                <TextBlock Text="{Binding SelectionSummary}" Foreground="#00FF00" FontSize="10" TextWrapping="Wrap"/>
+                            </ScrollViewer>
+                            <DockPanel>
+                                <TextBox Width="38" Text="{Binding CorrectionNumber, UpdateSourceTrigger=PropertyChanged}" ToolTip="Номер пользовательского выбора S, не Track ID"/>
+                                <Button Content="Уточнить / отмена" Command="{Binding ArmSelectionCorrectionCommand}" Style="{StaticResource TerminalButtonStyle}" Padding="4,1" FontSize="9" MinHeight="0" MinWidth="0"/>
+                            </DockPanel>
+                            <TextBlock Text="{Binding CorrectionHint}" Foreground="#AAAAAA" FontSize="9" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                        <Button Content="Продолжить без уточнения" Command="{Binding ContinueWithoutCorrectionCommand}" Style="{StaticResource TerminalButtonStyle}" FontSize="9" Padding="4,2" MinHeight="0" MinWidth="0" Margin="0,3,0,0"/></StackPanel>
+                            </ScrollViewer></Border><Border Grid.Column="0" VerticalAlignment="Stretch" Background="#000000" BorderBrush="#FFFFFF" BorderThickness="1" Padding="8,4" Margin="4" Grid.Row="2" Grid.ColumnSpan="2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" Margin="0,0,0,3">
+                        <TextBlock Text="LOG" Foreground="White" FontFamily="Consolas" FontSize="10" FontWeight="Bold"/>
+                        <Button Content="clear" Command="{Binding ClearLogCommand}" Style="{StaticResource TerminalButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Center" Padding="8,1" FontSize="8" MinWidth="0" MinHeight="0"/>
+                    </Grid>
+                    <ListBox Grid.Row="1" x:Name="LogListBox" ItemsSource="{Binding LogViewModel.Logs}" Background="#000000" Foreground="White" BorderThickness="0" FontFamily="Consolas" ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto" MouseRightButtonUp="LogListBox_MouseRightButtonUp">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontFamily="Consolas" FontSize="8" TextWrapping="Wrap" ToolTip="Правый клик — копировать">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#B0BEC5"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Level}" Value="Warn">
+                                                    <Setter Property="Foreground" Value="#FFC107"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                    <Setter Property="Foreground" Value="#FF5252"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            </Grid>
+
+        <!-- BOTTOM: лог — компактный блок слева внизу (не растянут), CONTROLS справа -->
+        </Grid>
+    </DockPanel>
+    </Border>
+</Window>
