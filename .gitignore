@@ -1,0 +1,23 @@
+# Visual Studio / IDE
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# .NET generated output
+[Bb]in/
+[Oo]bj/
+[Tt]est[Rr]esults/
+*.binlog
+
+# Local personalised configuration
+# IMPORTANT: ignore rules do not protect files already tracked by Git.
+/Services/EasterEggSecret.g.cs
+/Services/EasterEggSecret.local.cs
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
